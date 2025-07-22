@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="text-center">
+                <h1 class="display-5 mb-3">
+                    <i data-feather="bar-chart-2" class="me-3" style="color: #dc3545;"></i>
+                    RIPEScanner Analytics
+                </h1>
+                <p class="lead" style="color: #cccccc;">
+                    Session usage statistics and analysis
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-secondary">
+                <div class="card-body text-center">
+                    <div class="h2 text-primary">{{ analytics.total_searches }}</div>
+                    <small class="text-muted">Total Searches</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary">
+                <div class="card-body text-center">
+                    <div class="h2 text-warning">{{ analytics.enhanced_searches }}</div>
+                    <small class="text-muted">Enhanced Lookups</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary">
+                <div class="card-body text-center">
+                    <div class="h2 text-success">{{ analytics.rir_distribution|length }}</div>
+                    <small class="text-muted">RIRs Accessed</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary">
+                <div class="card-body text-center">
+                    <div class="h2 text-info">
+                        {% if analytics.enhanced_searches > 0 %}
+                        {{ "%.1f"|format((analytics.enhanced_searches / analytics.total_searches * 100) if analytics.total_searches > 0 else 0) }}%
+                        {% else %}
+                        0%
+                        {% endif %}
+                    </div>
+                    <small class="text-muted">Enhanced Mode Usage</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIR Distribution -->
+    {% if analytics.rir_distribution %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-secondary">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i data-feather="globe" class="me-2"></i>
+                        RIR Distribution
+                    </h5>
+                    <div class="row">
+                        {% for rir, count in analytics.rir_distribution.items() %}
+                        <div class="col-md-2 mb-3">
+                            <div class="text-center">
+                                <div class="h4">{{ count }}</div>
+                                <span class="badge bg-primary">{{ rir }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Activity -->
+    {% if analytics.recent_activity %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-secondary">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i data-feather="clock" class="me-2"></i>
+                        Recent Activity
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-sm">
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>RIR</th>
+                                    <th>Mode</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in analytics.recent_activity %}
+                                <tr>
+                                    <td><code>{{ item.ip }}</code></td>
+                                    <td><span class="badge bg-primary">{{ item.rir }}</span></td>
+                                    <td>
+                                        {% if item.enhanced %}
+                                        <span class="badge bg-warning">Enhanced</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Standard</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><small class="text-muted">{{ item.timestamp }}</small></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Feature Usage -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-secondary">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i data-feather="zap" class="me-2"></i>
+                        Feature Usage
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Standard RDAP Lookups</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" style="width: {{ ((analytics.total_searches - analytics.enhanced_searches) / analytics.total_searches * 100) if analytics.total_searches > 0 else 0 }}%"></div>
+                            </div>
+                            <small class="text-muted">{{ analytics.total_searches - analytics.enhanced_searches }} lookups</small>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Enhanced Lookups</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-warning" style="width: {{ (analytics.enhanced_searches / analytics.total_searches * 100) if analytics.total_searches > 0 else 0 }}%"></div>
+                            </div>
+                            <small class="text-muted">{{ analytics.enhanced_searches }} enhanced lookups</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Insights -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-secondary">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i data-feather="trending-up" class="me-2"></i>
+                        Performance Insights
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="text-success h5">✓</div>
+                                <h6>Multi-RIR Coverage</h6>
+                                <small class="text-muted">Access to all {{ analytics.rir_distribution|length }} regional registries</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="text-info h5">⚡</div>
+                                <h6>Enhanced Intelligence</h6>
+                                <small class="text-muted">{{ "%.1f"|format((analytics.enhanced_searches / analytics.total_searches * 100) if analytics.total_searches > 0 else 0) }}% of searches use enhanced mode</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="text-warning h5">📊</div>
+                                <h6>Session Activity</h6>
+                                <small class="text-muted">{{ analytics.total_searches }} total registry scans</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Usage -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-secondary">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i data-feather="code" class="me-2"></i>
+                        Available API Endpoints
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Data Services</h6>
+                            <ul class="list-unstyled">
+                                <li><code>GET /geolocation/&lt;ip&gt;</code></li>
+                                <li><code>GET /asn/&lt;ip&gt;</code></li>
+                                <li><code>POST /enhanced_lookup</code></li>
+                                <li><code>POST /batch_lookup</code></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Export & Analytics</h6>
+                            <ul class="list-unstyled">
+                                <li><code>GET /export/csv</code></li>
+                                <li><code>GET /export/json</code></li>
+                                <li><code>GET /api/stats</code></li>
+                                <li><code>GET /analytics</code></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Refresh data periodically
+setInterval(function() {
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Stats updated:', data);
+        })
+        .catch(error => console.error('Stats update failed:', error));
+}, 30000); // Update every 30 seconds
+</script>
+{% endblock %}

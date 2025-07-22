@@ -262,3 +262,211 @@ class RDAPService:
         
         # Format response
         return self.format_rdap_response(rdap_data, rir)
+
+
+class GeolocationService:
+    """Service for IP geolocation intelligence"""
+    
+    def __init__(self):
+        # Using ipinfo.io as the primary geolocation service
+        self.ipinfo_url = "http://ipinfo.io/{}/json"
+        
+    def get_location_data(self, ip_address: str) -> Dict[str, Any]:
+        """Get geolocation data for an IP address"""
+        try:
+            # Clean IP address (remove CIDR notation if present)
+            clean_ip = ip_address.split('/')[0]
+            
+            # Validate IP address
+            ipaddress.ip_address(clean_ip)
+            
+            # Query ipinfo.io for geolocation data
+            url = self.ipinfo_url.format(clean_ip)
+            response = requests.get(url, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Extract coordinates if available
+                coordinates = {}
+                if 'loc' in data:
+                    try:
+                        lat, lon = data['loc'].split(',')
+                        coordinates = {
+                            'latitude': float(lat),
+                            'longitude': float(lon)
+                        }
+                    except:
+                        coordinates = {}
+                
+                return {
+                    'ip': clean_ip,
+                    'city': data.get('city', 'Unknown'),
+                    'region': data.get('region', 'Unknown'),
+                    'country': data.get('country', 'Unknown'),
+                    'country_name': self._get_country_name(data.get('country', '')),
+                    'timezone': data.get('timezone', 'Unknown'),
+                    'coordinates': coordinates,
+                    'postal': data.get('postal', 'Unknown'),
+                    'asn': data.get('org', 'Unknown'),
+                    'success': True
+                }
+            else:
+                return {'success': False, 'error': f'Geolocation service returned status {response.status_code}'}
+                
+        except Exception as e:
+            logging.error(f"Geolocation lookup failed: {str(e)}")
+            return {'success': False, 'error': f'Geolocation lookup failed: {str(e)}'}
+    
+    def _get_country_name(self, country_code: str) -> str:
+        """Convert country code to full country name"""
+        country_names = {
+            'US': 'United States', 'CA': 'Canada', 'GB': 'United Kingdom',
+            'DE': 'Germany', 'FR': 'France', 'JP': 'Japan', 'CN': 'China',
+            'IN': 'India', 'BR': 'Brazil', 'AU': 'Australia', 'RU': 'Russia',
+            'IT': 'Italy', 'ES': 'Spain', 'KR': 'South Korea', 'NL': 'Netherlands',
+            'SE': 'Sweden', 'NO': 'Norway', 'DK': 'Denmark', 'FI': 'Finland',
+            'PL': 'Poland', 'CH': 'Switzerland', 'AT': 'Austria', 'BE': 'Belgium',
+            'IE': 'Ireland', 'PT': 'Portugal', 'GR': 'Greece', 'CZ': 'Czech Republic',
+            'HU': 'Hungary', 'RO': 'Romania', 'BG': 'Bulgaria', 'HR': 'Croatia',
+            'SK': 'Slovakia', 'SI': 'Slovenia', 'EE': 'Estonia', 'LV': 'Latvia',
+            'LT': 'Lithuania', 'LU': 'Luxembourg', 'MT': 'Malta', 'CY': 'Cyprus'
+        }
+        return country_names.get(country_code, country_code)
+
+
+class ASNService:
+    """Service for Autonomous System Number lookups"""
+    
+    def __init__(self):
+        self.asn_api_url = "https://api.hackertarget.com/aslookup/?q={}"
+        
+    def get_asn_data(self, ip_address: str) -> Dict[str, Any]:
+        """Get ASN information for an IP address"""
+        try:
+            # Clean IP address
+            clean_ip = ip_address.split('/')[0]
+            ipaddress.ip_address(clean_ip)
+            
+            # Query ASN lookup API
+            url = self.asn_api_url.format(clean_ip)
+            response = requests.get(url, timeout=10)
+            
+            if response.status_code == 200:
+                asn_text = response.text.strip()
+                
+                if 'AS' in asn_text and not 'error' in asn_text.lower():
+                    # Parse ASN response (format: "AS12345 ISP Name")
+                    parts = asn_text.split(' ', 1)
+                    asn_number = parts[0] if parts else 'Unknown'
+                    asn_name = parts[1] if len(parts) > 1 else 'Unknown'
+                    
+                    return {
+                        'ip': clean_ip,
+                        'asn_number': asn_number,
+                        'asn_name': asn_name,
+                        'asn_full': asn_text,
+                        'success': True
+                    }
+                else:
+                    return {'success': False, 'error': 'ASN not found for this IP'}
+            else:
+                return {'success': False, 'error': f'ASN service returned status {response.status_code}'}
+                
+        except Exception as e:
+            logging.error(f"ASN lookup failed: {str(e)}")
+            return {'success': False, 'error': f'ASN lookup failed: {str(e)}'}
+
+
+class BatchService:
+    """Service for batch IP address processing"""
+    
+    def __init__(self, rdap_service: RDAPService):
+        self.rdap_service = rdap_service
+        self.geo_service = GeolocationService()
+        self.asn_service = ASNService()
+        
+    def process_batch(self, ip_list: list) -> Dict[str, Any]:
+        """Process multiple IP addresses in batch"""
+        results = []
+        errors = []
+        
+        for ip in ip_list:
+            ip = ip.strip()
+            if not ip:
+                continue
+                
+            try:
+                # Validate IP
+                validation = self.rdap_service.validate_ip(ip)
+                if not validation['valid']:
+                    errors.append(f"{ip}: {validation['message']}")
+                    continue
+                
+                # Basic RDAP lookup
+                rdap_result = self.rdap_service.lookup(ip)
+                
+                # Enhanced data
+                geo_data = self.geo_service.get_location_data(ip)
+                asn_data = self.asn_service.get_asn_data(ip)
+                
+                result = {
+                    'ip': ip,
+                    'rdap': rdap_result,
+                    'geolocation': geo_data,
+                    'asn': asn_data,
+                    'processed_at': datetime.now().isoformat()
+                }
+                
+                results.append(result)
+                
+            except Exception as e:
+                errors.append(f"{ip}: {str(e)}")
+                
+        return {
+            'total_processed': len(results),
+            'total_errors': len(errors),
+            'results': results,
+            'errors': errors,
+            'success': len(results) > 0
+        }
+    
+    def export_results(self, results: Dict[str, Any], format_type: str = 'json') -> str:
+        """Export batch results in various formats"""
+        if format_type == 'json':
+            return json.dumps(results, indent=2)
+        elif format_type == 'csv':
+            return self._to_csv(results)
+        else:
+            return json.dumps(results, indent=2)
+    
+    def _to_csv(self, results: Dict[str, Any]) -> str:
+        """Convert results to CSV format"""
+        if not results.get('results'):
+            return "No results to export"
+        
+        csv_lines = ['IP,RIR,Network,Organization,Country,ASN,ASN_Name,City,Region']
+        
+        for result in results['results']:
+            ip = result.get('ip', '')
+            rdap = result.get('rdap', {})
+            geo = result.get('geolocation', {})
+            asn = result.get('asn', {})
+            
+            line = [
+                ip,
+                rdap.get('rir', ''),
+                rdap.get('network', ''),
+                rdap.get('organization', ''),
+                geo.get('country_name', ''),
+                asn.get('asn_number', ''),
+                asn.get('asn_name', ''),
+                geo.get('city', ''),
+                geo.get('region', '')
+            ]
+            
+            # Clean and escape CSV values
+            clean_line = [str(field).replace(',', ';').replace('\n', ' ') for field in line]
+            csv_lines.append(','.join(clean_line))
+        
+        return '\n'.join(csv_lines)
