@@ -314,9 +314,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 [![GitHub forks](https://img.shields.io/github/forks/[username]/ripescanner?style=social)](https://github.com/[username]/ripescanner)
 
 *Comprehensive Multi-Registry RDAP Intelligence with Advanced Analytics*
-
-<<<<<<< HEAD
-</div>
-=======
-</div>
->>>>>>> b5b48145cfe151b7bbf52d284d159fc058c11464
