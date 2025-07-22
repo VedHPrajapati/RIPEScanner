@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                            <i data-feather="{{ 'alert-circle' if category == 'error' else 'check-circle' }}" class="me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="text-center">
+                <h1 class="display-4 mb-3">
+                    <i data-feather="search" class="me-3" style="color: #dc3545;"></i>
+                    <span style="color: #dc3545;">RIPE</span><span style="color: #ffffff;">Scanner</span>
+                </h1>
+                <p class="lead" style="color: #cccccc;">
+                    Advanced RIPE registry intelligence with comprehensive multi-RIR RDAP scanning capabilities
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lookup Form -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="target" class="me-2"></i>
+                        RIPE Registry Scan
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('lookup') }}" id="lookupForm">
+                        <div class="mb-3">
+                            <label for="ip_address" class="form-label">Target IP Address or Network Prefix</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i data-feather="target" style="color: #dc3545;"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="ip_address" 
+                                       name="ip_address" 
+                                       placeholder="e.g., 8.8.8.8 or 192.168.1.0/24"
+                                       value="{{ query or '' }}"
+                                       required>
+                            </div>
+                            <div id="validation-feedback" class="form-text"></div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                            <button type="submit" class="btn btn-primary" id="lookupBtn">
+                                <i data-feather="search" class="me-2"></i>
+                                Scan IP Registry
+                            </button>
+                            {% if history %}
+                            <form method="POST" action="{{ url_for('clear_history') }}" class="d-inline">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                    <i data-feather="trash-2" class="me-1"></i>
+                                    Clear History
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    {% if result %}
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="info" class="me-2"></i>
+                        Registry Scan Results for {{ query }}
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-primary">{{ result.rir }}</span>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="copyResults()">
+                            <i data-feather="copy" class="me-1"></i>
+                            Copy
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Basic Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Registry Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>RIR:</strong></td>
+                                    <td>{{ result.rir }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Query Time:</strong></td>
+                                    <td>{{ result.timestamp }}</td>
+                                </tr>
+                                {% if result.network_name %}
+                                <tr>
+                                    <td><strong>Network Name:</strong></td>
+                                    <td>{{ result.network_name }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if result.ip_range %}
+                                <tr>
+                                    <td><strong>IP Range:</strong></td>
+                                    <td><code>{{ result.ip_range }}</code></td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                        
+                        {% if result.cidr_blocks %}
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">CIDR Blocks</h6>
+                            <div class="bg-dark p-2 rounded">
+                                {% for cidr in result.cidr_blocks %}
+                                <code class="d-block">{{ cidr.cidr }}/{{ cidr.length }}</code>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Organization Information -->
+                    {% if result.organization %}
+                    <div class="mb-4">
+                        <h6 class="fw-bold">Organization</h6>
+                        <div class="card bg-secondary">
+                            <div class="card-body">
+                                {% if result.organization.name %}
+                                <p><strong>Name:</strong> {{ result.organization.name }}</p>
+                                {% endif %}
+                                {% if result.organization.organization %}
+                                <p><strong>Organization:</strong> {{ result.organization.organization }}</p>
+                                {% endif %}
+                                {% if result.organization.email %}
+                                <p><strong>Email:</strong> <a href="mailto:{{ result.organization.email }}">{{ result.organization.email }}</a></p>
+                                {% endif %}
+                                {% if result.organization.phone %}
+                                <p><strong>Phone:</strong> {{ result.organization.phone }}</p>
+                                {% endif %}
+                                {% if result.organization.address %}
+                                <p><strong>Address:</strong> {{ result.organization.address }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Contact Information -->
+                    {% if result.contacts %}
+                    <div class="mb-4">
+                        <h6 class="fw-bold">Contacts</h6>
+                        <div class="row">
+                            {% for contact in result.contacts %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card bg-secondary">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            {{ contact.handle }}
+                                            {% for role in contact.roles %}
+                                                <span class="badge bg-info ms-1">{{ role }}</span>
+                                            {% endfor %}
+                                        </h6>
+                                        {% if contact.name %}
+                                        <p><strong>Name:</strong> {{ contact.name }}</p>
+                                        {% endif %}
+                                        {% if contact.organization %}
+                                        <p><strong>Organization:</strong> {{ contact.organization }}</p>
+                                        {% endif %}
+                                        {% if contact.email %}
+                                        <p><strong>Email:</strong> <a href="mailto:{{ contact.email }}">{{ contact.email }}</a></p>
+                                        {% endif %}
+                                        {% if contact.phone %}
+                                        <p><strong>Phone:</strong> {{ contact.phone }}</p>
+                                        {% endif %}
+                                        {% if contact.address %}
+                                        <p><strong>Address:</strong> {{ contact.address }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Raw Data (Collapsible) -->
+                    <div class="mb-3">
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#rawData">
+                            <i data-feather="code" class="me-1"></i>
+                            Show Raw RDAP Data
+                        </button>
+                    </div>
+                    <div class="collapse" id="rawData">
+                        <div class="bg-dark p-3 rounded">
+                            <pre class="text-light mb-0" id="rawDataContent">{{ result.raw_data | tojson(indent=2) }}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Search History -->
+    {% if history %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="clock" class="me-2"></i>
+                        Recent Searches
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>RIR</th>
+                                    <th>Timestamp</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in history %}
+                                <tr>
+                                    <td><code>{{ item.ip }}</code></td>
+                                    <td><span class="badge bg-primary">{{ item.rir }}</span></td>
+                                    <td><small class="text-muted">{{ item.timestamp }}</small></td>
+                                    <td>
+                                        <form method="POST" action="{{ url_for('lookup') }}" class="d-inline">
+                                            <input type="hidden" name="ip_address" value="{{ item.ip }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                <i data-feather="repeat" class="me-1"></i>
+                                                Lookup Again
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Supported RIRs Info -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card bg-secondary">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i data-feather="info" class="me-2"></i>
+                        Regional Internet Registry Coverage
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-primary w-100 py-2">RIPE NCC</span>
+                            <small class="text-muted d-block mt-1">Europe/Middle East</small>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-primary w-100 py-2">ARIN</span>
+                            <small class="text-muted d-block mt-1">North America</small>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-primary w-100 py-2">APNIC</span>
+                            <small class="text-muted d-block mt-1">Asia Pacific</small>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-primary w-100 py-2">LACNIC</span>
+                            <small class="text-muted d-block mt-1">Latin America</small>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-primary w-100 py-2">AFRINIC</span>
+                            <small class="text-muted d-block mt-1">Africa</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Store result data globally for copying
+{% if result %}
+window.rdapResult = {{ result | tojson }};
+{% endif %}
+</script>
+{% endblock %}

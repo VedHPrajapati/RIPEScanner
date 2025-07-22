@@ -1,0 +1,28 @@
+{
+  "name": "ripescanner",
+  "version": "1.0.0",
+  "description": "Advanced Network Intelligence Platform - Multi-Registry RDAP Lookup Tool",
+  "author": "Hitesh Prajapati",
+  "license": "MIT",
+  "homepage": "https://github.com/hitesh/ripescanner",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hitesh/ripescanner.git"
+  },
+  "keywords": [
+    "rdap",
+    "network-intelligence",
+    "ripe",
+    "arin",
+    "apnic",
+    "lacnic",
+    "afrinic",
+    "ip-lookup"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "scripts": {
+    "deploy": "echo 'Deploy static files to your web server'"
+  }
+}

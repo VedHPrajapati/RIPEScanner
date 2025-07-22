@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIPEScanner - Multi-Registry RDAP Lookup</title>
+    <!-- Bootstrap CSS with Replit dark theme -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="">
+                <i data-feather="globe" class="me-2" style="color: #dc3545;"></i>
+                <span style="color: #dc3545;">RIPE</span><span style="color: #ffffff;">Scanner</span>
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text">
+                    <i data-feather="shield" class="me-1" style="color: #dc3545;"></i>
+                    RIPE-Focused Registry Intelligence
+                </span>
+            </div>
+        </div>
+    </nav>
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+<div class="container py-4">
+    <!-- Flash Messages -->
+            <div class="row mb-4">
+                <div class="col-12">
+                        <div class="alert alert- alert-dismissible fade show" role="alert">
+                            <i data-feather="" class="me-2"></i>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                </div>
+            </div>
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="text-center">
+                <h1 class="display-4 mb-3">
+                    <i data-feather="search" class="me-3" style="color: #dc3545;"></i>
+                    <span style="color: #dc3545;">RIPE</span><span style="color: #ffffff;">Scanner</span>
+                </h1>
+                <p class="lead" style="color: #cccccc;">
+                    Advanced RIPE registry intelligence with comprehensive multi-RIR RDAP scanning capabilities
+                </p>
+            </div>
+        </div>
+    </div>
+    <!-- Lookup Form -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="target" class="me-2"></i>
+                        RIPE Registry Scan
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="" id="lookupForm">
+                        <div class="mb-3">
+                            <label for="ip_address" class="form-label">Target IP Address or Network Prefix</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i data-feather="target" style="color: #dc3545;"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="ip_address" 
+                                       name="ip_address" 
+                                       placeholder="e.g., 8.8.8.8 or 192.168.1.0/24"
+                                       value=""
+                                       required>
+                            </div>
+                            <div id="validation-feedback" class="form-text"></div>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                            <button type="submit" class="btn btn-primary" id="lookupBtn">
+                                <i data-feather="search" class="me-2"></i>
+                                Scan IP Registry
+                            </button>
+                            <form method="POST" action="" class="d-inline">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                    <i data-feather="trash-2" class="me-1"></i>
+                                    Clear History
+                                </button>
+                            </form>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Results Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="info" class="me-2"></i>
+                        Registry Scan Results for 
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-primary"></span>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="copyResults()">
+                            <i data-feather="copy" class="me-1"></i>
+                            Copy
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Basic Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Registry Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>RIR:</strong></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Query Time:</strong></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Network Name:</strong></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>IP Range:</strong></td>
+                                    <td><code></code></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">CIDR Blocks</h6>
+                            <div class="bg-dark p-2 rounded">
+                                <code class="d-block">/</code>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Organization Information -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold">Organization</h6>
+                        <div class="card bg-secondary">
+                            <div class="card-body">
+                                <p><strong>Name:</strong> </p>
+                                <p><strong>Organization:</strong> </p>
+                                <p><strong>Email:</strong> <a href="mailto:"></a></p>
+                                <p><strong>Phone:</strong> </p>
+                                <p><strong>Address:</strong> </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Contact Information -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold">Contacts</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="card bg-secondary">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                                <span class="badge bg-info ms-1"></span>
+                                        </h6>
+                                        <p><strong>Name:</strong> </p>
+                                        <p><strong>Organization:</strong> </p>
+                                        <p><strong>Email:</strong> <a href="mailto:"></a></p>
+                                        <p><strong>Phone:</strong> </p>
+                                        <p><strong>Address:</strong> </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Raw Data (Collapsible) -->
+                    <div class="mb-3">
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#rawData">
+                            <i data-feather="code" class="me-1"></i>
+                            Show Raw RDAP Data
+                        </button>
+                    </div>
+                    <div class="collapse" id="rawData">
+                        <div class="bg-dark p-3 rounded">
+                            <pre class="text-light mb-0" id="rawDataContent"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Search History -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="clock" class="me-2"></i>
+                        Recent Searches
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>RIR</th>
+                                    <th>Timestamp</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code></code></td>
+                                    <td><span class="badge bg-primary"></span></td>
+                                    <td><small class="text-muted"></small></td>
+                                    <td>
+                                        <form method="POST" action="" class="d-inline">
+                                            <input type="hidden" name="ip_address" value="">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                <i data-feather="repeat" class="me-1"></i>
+                                                Lookup Again
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Supported RIRs Info -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card bg-secondary">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i data-feather="info" class="me-2"></i>
+                        Regional Internet Registry Coverage
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-primary w-100 py-2">RIPE NCC</span>
+                            <small class="text-muted d-block mt-1">Europe/Middle East</small>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-primary w-100 py-2">ARIN</span>
+                            <small class="text-muted d-block mt-1">North America</small>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-primary w-100 py-2">APNIC</span>
+                            <small class="text-muted d-block mt-1">Asia Pacific</small>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-primary w-100 py-2">LACNIC</span>
+                            <small class="text-muted d-block mt-1">Latin America</small>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <span class="badge bg-primary w-100 py-2">AFRINIC</span>
+                            <small class="text-muted d-block mt-1">Africa</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    </main>
+    <!-- Footer -->
+    <footer class="bg-dark border-top mt-5">
+        <div class="container py-3">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <small class="text-muted">
+                        Optimized for RIPE • Supports ARIN, APNIC, LACNIC, and AFRINIC
+                    </small>
+                </div>
+                <div class="col-md-4 text-center">
+                    <small class="text-muted">
+                        <strong style="color: #dc3545;">Created By Hitesh Prajapati</strong><br>
+                        <span style="font-size: 0.75rem;">B.E. (Computer) • M.Sc (Computer Systems Engg)<br>CCNP Enterprise • Juniper Certified Professional</span>
+                    </small>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <small class="text-muted">
+                        Advanced Network Intelligence Platform
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="static/js/main.js"></script>
+    <!-- Initialize Feather Icons -->
+    <script>feather.replace()</script>
+</body>
+</html>
